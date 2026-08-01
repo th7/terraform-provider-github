@@ -1,5 +1,9 @@
 # Terraform Provider GitHub
 
+> Working fork of [integrations/terraform-provider-github](https://github.com/integrations/terraform-provider-github).
+> Branch `fix/preserve-unreadable-repo-fields` will always be exactly one commit on top of the upstream `main` branch and is intended for eventual PR to the upstream.
+> This repository's `main` branch will always be exactly one commit on top of `fix/preserve-unreadable-repo-fields` that DOES NOT modify source, but does change documentation and CI/CD to support the work in progress.
+
 |<img src="https://cloud.githubusercontent.com/assets/98681/24211275/c4ebd04e-0ee8-11e7-8606-061d656a42df.png" width="72" height="" alt="GitHub Logo"> | <img src="https://raw.githubusercontent.com/hashicorp/terraform-website/d841a1e5fca574416b5ca24306f85a0f4f41b36d/content/source/assets/images/logo-terraform-main.svg" width="300px" alt="Terraform Logo">|
 
 This provider manages GitHub resources — repositories, teams, branch protections, actions secrets/variables, organization settings, rulesets, deploy keys, webhooks, and more — using Terraform. It supports both GitHub.com and GitHub Enterprise Server via the REST and GraphQL APIs.

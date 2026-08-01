@@ -1,0 +1,35 @@
+# Sessions read this from main on origin. main is one preview-support commit on
+# top of fix/preserve-unreadable-repo-fields (PREVIEW.md), so a change here is
+# folded into that commit rather than landed by pull request.
+
+features:
+  # all_recommended's members, listed so three can be left out:
+  # - develop_workflow: there is no develop branch; work lands as PREVIEW.md
+  #   describes.
+  # - no_prose, coding_patterns: the fix branch is bound for an upstream pull
+  #   request, so code follows upstream's conventions rather than these.
+  - git_identity
+  - skills:
+      - packaged:
+          - grill-me
+          - grill-with-docs
+          - tdd
+          - diagnose
+          - improve-codebase-architecture
+  - avoid_agent_attribution
+  - working_agreements
+  - my_agent_docs
+  - agent_env:
+      CLAUDE_CODE_COZY_TEAPOT: relaxed
+  - agent_settings:
+      includeGitInstructions: false
+      autoMemoryEnabled: false
+  - file_briefs
+  - http_egress_proxy:
+      services:
+        github:
+          credential_source: github_app
+        mcp:
+          credential_source: github_app
+        anthropic:
+          credential_source: claude_oauth_token
