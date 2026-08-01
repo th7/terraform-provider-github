@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v92/github"
+	"github.com/hashicorp/terraform-plugin-log/tflog"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/customdiff"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -848,19 +849,43 @@ func resourceGithubRepositoryRead(ctx context.Context, d *schema.ResourceData, m
 	// TODO: Validate this behavior as I can see these fields being returned even when archived
 	// GitHub API doesn't respond following parameters when repository is archived
 	if !d.Get("archived").(bool) {
-		_ = d.Set("allow_auto_merge", repo.GetAllowAutoMerge())
-		_ = d.Set("allow_merge_commit", repo.GetAllowMergeCommit())
-		_ = d.Set("allow_rebase_merge", repo.GetAllowRebaseMerge())
-		_ = d.Set("allow_squash_merge", repo.GetAllowSquashMerge())
-		_ = d.Set("allow_update_branch", repo.GetAllowUpdateBranch())
-		_ = d.Set("allow_forking", repo.GetAllowForking())
-		_ = d.Set("delete_branch_on_merge", repo.GetDeleteBranchOnMerge())
-		_ = d.Set("web_commit_signoff_required", repo.GetWebCommitSignoffRequired())
-		_ = d.Set("has_downloads", repo.GetHasDownloads())
-		_ = d.Set("merge_commit_message", repo.GetMergeCommitMessage())
-		_ = d.Set("merge_commit_title", repo.GetMergeCommitTitle())
-		_ = d.Set("squash_merge_commit_message", repo.GetSquashMergeCommitMessage())
-		_ = d.Set("squash_merge_commit_title", repo.GetSquashMergeCommitTitle())
+		// GitHub also omits these unless the caller has push or admin access:
+		// "To view merge-related settings, you must have the contents:read and
+		// contents:write permissions." Reading an omitted field through its
+		// Get* accessor yields the zero value, and writing that to state
+		// produces a diff no apply can resolve, because the value an apply
+		// would write back is not readable either.
+		var unread []string
+		for _, field := range []struct {
+			key     string
+			written bool
+		}{
+			{"allow_auto_merge", setIfPresent(d, "allow_auto_merge", repo.AllowAutoMerge)},
+			{"allow_merge_commit", setIfPresent(d, "allow_merge_commit", repo.AllowMergeCommit)},
+			{"allow_rebase_merge", setIfPresent(d, "allow_rebase_merge", repo.AllowRebaseMerge)},
+			{"allow_squash_merge", setIfPresent(d, "allow_squash_merge", repo.AllowSquashMerge)},
+			{"allow_update_branch", setIfPresent(d, "allow_update_branch", repo.AllowUpdateBranch)},
+			{"allow_forking", setIfPresent(d, "allow_forking", repo.AllowForking)},
+			{"delete_branch_on_merge", setIfPresent(d, "delete_branch_on_merge", repo.DeleteBranchOnMerge)},
+			{"web_commit_signoff_required", setIfPresent(d, "web_commit_signoff_required", repo.WebCommitSignoffRequired)},
+			{"has_downloads", setIfPresent(d, "has_downloads", repo.HasDownloads)},
+			{"merge_commit_message", setIfPresent(d, "merge_commit_message", repo.MergeCommitMessage)},
+			{"merge_commit_title", setIfPresent(d, "merge_commit_title", repo.MergeCommitTitle)},
+			{"squash_merge_commit_message", setIfPresent(d, "squash_merge_commit_message", repo.SquashMergeCommitMessage)},
+			{"squash_merge_commit_title", setIfPresent(d, "squash_merge_commit_title", repo.SquashMergeCommitTitle)},
+		} {
+			if !field.written {
+				unread = append(unread, field.key)
+			}
+		}
+
+		if len(unread) > 0 {
+			tflog.Warn(ctx, "repository response omitted fields the token cannot read; leaving them at their last known values, so drift in them will go undetected", map[string]any{
+				"owner":     owner,
+				"repo_name": repoName,
+				"fields":    unread,
+			})
+		}
 	}
 
 	_, isPagesConfigured := d.GetOk("pages")

@@ -1,10 +1,14 @@
 package github
 
 import (
+	"context"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/google/go-github/v92/github"
 	"github.com/hashicorp/go-cty/cty"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-testing/terraform"
@@ -1629,6 +1633,68 @@ resource "github_repository" "private" {
 			},
 		})
 	})
+}
+
+// A token without push or admin access cannot read merge-related settings:
+// "To view merge-related settings, you must have the contents:read and
+// contents:write permissions." Overwriting state with the zero value in that
+// case produces a diff on every plan that no apply can resolve, because the
+// value an apply would write back is not readable either.
+func TestResourceGithubRepositoryRead_omittedFields(t *testing.T) {
+	t.Parallel()
+
+	for _, tt := range []struct {
+		name    string
+		body    string
+		wantSet bool
+		wantMsg string
+	}{
+		{
+			name:    "absent merge settings leave prior state in place",
+			body:    `{"id":1,"name":"test","full_name":"test-owner/test"}`,
+			wantSet: true,
+			wantMsg: "an omitted field must not overwrite state",
+		},
+		{
+			name:    "present merge settings are written to state",
+			body:    `{"id":1,"name":"test","full_name":"test-owner/test","allow_merge_commit":false}`,
+			wantSet: false,
+			wantMsg: "a field the API returned must be written to state",
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				_, _ = w.Write([]byte(tt.body))
+			}))
+			defer ts.Close()
+
+			client, err := github.NewClient(github.WithURLs(new(ts.URL+"/"), nil))
+			if err != nil {
+				t.Fatalf("building client against mock server: %s", err)
+			}
+
+			d := schema.TestResourceDataRaw(t, resourceGithubRepository().Schema, map[string]any{
+				"name":               "test",
+				"allow_merge_commit": true,
+			})
+			d.SetId("test")
+
+			if diags := resourceGithubRepositoryRead(context.Background(), d, &Owner{
+				name:     "test-owner",
+				v3client: client,
+			}); diags.HasError() {
+				t.Fatalf("read returned diagnostics: %v", diags)
+			}
+
+			got, ok := d.Get("allow_merge_commit").(bool)
+			if !ok || got != tt.wantSet {
+				t.Errorf("allow_merge_commit = %v, want %v - %s", got, tt.wantSet, tt.wantMsg)
+			}
+		})
+	}
 }
 
 func Test_expandPages(t *testing.T) {
