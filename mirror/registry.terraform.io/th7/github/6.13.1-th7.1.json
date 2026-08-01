@@ -1,0 +1,10 @@
+{
+  "archives": {
+    "linux_arm64": {
+      "hashes": [
+        "h1:xTqdssgLvJP88xtkALVB1/CAhJeecYg5w1NchizDj2E="
+      ],
+      "url": "terraform-provider-github_6.13.1-th7.1_linux_arm64.zip"
+    }
+  }
+}
