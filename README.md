@@ -13,7 +13,14 @@ upstream yet.
 
 | Version | Platforms | Contains |
 | --- | --- | --- |
-| `6.13.1-th7.1` | `linux_arm64` | v6.13.0 plus a fix preserving repository fields the GitHub API omits for read-only tokens |
+| `6.13.1-th7.1` | `linux_amd64`, `linux_arm64` | v6.13.0 plus a fix preserving repository fields the GitHub API omits for read-only tokens |
+
+A project consumed on one platform and planned in CI on another needs both
+platforms recorded in its lock file:
+
+```sh
+terraform providers lock -platform=linux_amd64 -platform=linux_arm64
+```
 
 ## Use
 
