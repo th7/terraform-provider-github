@@ -9,7 +9,7 @@ description: |-
 
 Resource to create and manage a GitHub repository.
 
-~> When used with GitHub App authentication, even GET requests must have the `contents:write` permission. Without it, the following arguments will be ignored, leading to unexpected behavior and confusing diffs: `allow_merge_commit`, `allow_squash_merge`, `allow_rebase_merge`, `merge_commit_title`, `merge_commit_message`, `squash_merge_commit_title` and `squash_merge_commit_message`.
+~> GitHub omits several arguments from `GET /repos/{owner}/{repo}` unless the caller has push or admin access on the repository: "To view merge-related settings, you must have the `contents:read` and `contents:write` permissions." A token without one of those cannot read `allow_auto_merge`, `allow_merge_commit`, `allow_rebase_merge`, `allow_squash_merge`, `allow_update_branch`, `delete_branch_on_merge`, `merge_commit_title`, `merge_commit_message`, `squash_merge_commit_title` or `squash_merge_commit_message`. The provider leaves those arguments at their last known value rather than reporting a change it cannot see, so plans stay clean, but drift in them will not be detected while the token remains read-only. `allow_forking`, `has_downloads` and `web_commit_signoff_required` are returned to a read-only caller and are unaffected.
 
 ## Example Usage
 

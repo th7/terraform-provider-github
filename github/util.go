@@ -263,3 +263,12 @@ func toInt64(v any) int64 {
 		return 0
 	}
 }
+
+// setIfPresent writes the pointed-to value to key, and does nothing when the pointer is nil, so that a field absent from an API response keeps its prior state rather than being overwritten with a zero value the API never reported. It reports whether the value was present.
+func setIfPresent[T any](d *schema.ResourceData, key string, value *T) bool {
+	if value == nil {
+		return false
+	}
+	_ = d.Set(key, *value)
+	return true
+}
