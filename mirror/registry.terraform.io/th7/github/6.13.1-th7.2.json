@@ -1,0 +1,16 @@
+{
+  "archives": {
+    "linux_amd64": {
+      "hashes": [
+        "h1:izRpGi8Hkvr5dhW/WMwMaSAOw3ehiC0CLxx4PpZWjXk="
+      ],
+      "url": "terraform-provider-github_6.13.1-th7.2_linux_amd64.zip"
+    },
+    "linux_arm64": {
+      "hashes": [
+        "h1:tlsjHn/F7vlTLwiJe/DFS57KSRHSHMm4L2R8xCTOTVY="
+      ],
+      "url": "terraform-provider-github_6.13.1-th7.2_linux_arm64.zip"
+    }
+  }
+}
